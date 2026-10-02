@@ -115,7 +115,7 @@ export default function App() {
 
 			<main className="max-w-7xl mx-auto px-4 py-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
 				<div className="lg:col-span-2 space-y-4">
-					<MachineView stage={stage} current={current} busy={busy} />
+					<MachineView stage={stage} current={current} busy={busy} counts={counters.byContainer} capacity={params.containerCapacity} />
 					<ContainersView counters={counters} capacity={params.containerCapacity} />
 					<EventLog results={results} />
 				</div>

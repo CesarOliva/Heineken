@@ -9,7 +9,6 @@ export interface BottleResult {
     height: number; // cm
     diameter: number; // cm
     weight: number; // g
-    lightTransmission: number; // %
     meanRGB: [number, number, number];
     ocrText: string;
     decision: Decision;
@@ -21,7 +20,6 @@ export interface BottleSeed {
     height: number;
     diameter: number;
     weight: number;
-    lightTransmission: number;
     meanRGB: [number, number, number];
     trueColor: BottleColor;
     ocrText: string;
@@ -37,7 +35,6 @@ export interface AcceptanceRanges {
     maxDiameter: number; // cm
     minWeight: number; // g
     maxWeight: number; // g
-    minTransmission: number; // % mínimo de transmisión de luz
 }
 
 export const STANDARD_RANGES: AcceptanceRanges = {
@@ -47,7 +44,6 @@ export const STANDARD_RANGES: AcceptanceRanges = {
     maxDiameter: 10,
     minWeight: 180,
     maxWeight: 250,
-    minTransmission: 3,
 };
 
 export interface SimParams {
@@ -67,7 +63,6 @@ export type MachineState =
     | 'BOTTLE_DETECTED'
     | 'WEIGHING'
     | 'MEASURING'
-    | 'GLASS_ANALYSIS'
     | 'COLOR_ANALYSIS'
     | 'OCR_ANALYSIS'
     | 'DECISION'
@@ -79,7 +74,6 @@ export const STAGE_ORDER: MachineState[] = [
     'BOTTLE_DETECTED',
     'WEIGHING',
     'MEASURING',
-    'GLASS_ANALYSIS',
     'COLOR_ANALYSIS',
     'OCR_ANALYSIS',
     'DECISION',

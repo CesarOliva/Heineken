@@ -45,9 +45,12 @@ Demostrar mediante una simulación interactiva que una máquina puede:
 - Identificación de marca mediante OCR.
 - Clasificación en cinco contenedores.
 - Contadores en tiempo real.
-- Parámetros configurables mediante controles deslizantes.
+- Simulación automática continua (iniciar/pausar) con botellas aleatorias.
+- Pausa configurable entre botella y botella.
+- Rangos de aceptación estándar fijos, visibles en el pie de página (no editables).
+- Controles de simulación: velocidad, pausa entre botellas y capacidad de contenedores.
 - Velocidad de simulación configurable.
-- Registro de cada botella en CSV.
+- Registro de cada botella en CSV (acumulado en sesión + botón de descarga).
 
 ## Fuera del alcance inicial
 
@@ -74,16 +77,20 @@ Tecnologías:
 
 - React
 - TypeScript
+- Vite
+- Tailwind CSS
 
-La interfaz será responsable de:
+La interfaz es responsable de:
 
 - Representar visualmente la máquina.
 - Animar el movimiento de las botellas.
 - Mostrar los sensores y etapas del proceso.
-- Mostrar los resultados de cada análisis.
+- Mostrar los resultados de cada análisis (solo al terminar cada botella; durante el proceso muestra "Procesando…").
 - Mostrar contadores.
-- Permitir modificar parámetros mediante controles deslizantes.
+- Ejecutar la simulación en modo automático continuo (iniciar/pausar) con botellas aleatorias.
 - Controlar la velocidad de simulación.
+- Controlar la pausa entre botella y botella.
+- Mostrar los rangos estándar de aceptación en el pie de página (no editables).
 - Mostrar aceptación/rechazo.
 - Representar el funcionamiento de las compuertas.
 - Mostrar el estado de los contenedores.
@@ -124,14 +131,7 @@ Medición de altura y diámetro
    │
    └── SÍ
         ↓
-   Análisis de transmisión de luz
-        ↓
-   ¿Es vidrio válido?
-   ├── NO → Rechazo
-   │
-   └── SÍ
-        ↓
-   Identificación de color
+   Identificación de color (RGB)
         ↓
    OCR de etiqueta
         ↓
@@ -158,15 +158,15 @@ La máquina será representada como un **gabinete cerrado de aproximadamente 1.2
 
 ### 1. Charola de entrada
 
-El personal coloca una botella a la vez.
+En la simulación web las botellas se generan **aleatoriamente** (una a la vez) mientras la simulación está en marcha.
 
-La botella se introduce:
+Cada botella simulada se introduce:
 
 - De una en una.
 - Completa.
 - Con el cuello hacia adelante.
 
-Las botellas rotas no deberían ser introducidas por el personal, aunque la máquina cuenta con filtros para detectar valores anormales.
+El generador produce mayoritariamente botellas válidas (~85%) y una proporción de anomalías (~15%: peso/altura fuera de rango), además de casos sin etiqueta o con marcas fuera de catálogo. La máquina cuenta con filtros para detectar valores anormales.
 
 ---
 
@@ -210,16 +210,11 @@ Los valores son aproximados y no representan mediciones industriales de precisi�
 
 ---
 
-### 5. Cámara óptica
+### 5. Cámara RGB
 
-La cámara analiza la botella utilizando una fuente de luz blanca de fondo.
+La cámara analiza la botella y obtiene sus componentes RGB.
 
-La medición se realiza en una zona sin etiqueta, preferentemente:
-
-- Cuello.
-- Hombro.
-
-El sistema calcula la cantidad de luz que atraviesa el vidrio y sus componentes RGB.
+El color del vidrio se establece exclusivamente a partir del análisis RGB (verde, ámbar o transparente). No existe medición de transmisión de luz.
 
 ---
 
@@ -280,10 +275,13 @@ Contenedor lleno → Advertencia
 
 La máquina muestra visualmente el resultado del procesamiento.
 
+El resultado de una botella **solo se muestra cuando termina su ciclo**. Mientras hay una botella en proceso, la pantalla muestra "Procesando…" sin revelar datos parciales.
+
 Estados principales:
 
 - Verde → Botella aceptada.
 - Rojo → Botella rechazada.
+- Azul/pulsante → Botella en proceso ("Procesando…").
 - Amarillo/advertencia → Contenedor lleno o condición que requiera atención.
 
 También se muestran los conteos acumulados.
@@ -342,15 +340,15 @@ No identificada
 
 ---
 
-# 9. Reglas de aceptación
+# 9. Reglas de aceptación (estándar fijo)
 
-Las reglas son **supuestos aproximados y editables**.
+Las reglas son **supuestos aproximados y constituyen el estándar fijo de la máquina**. No son editables desde la interfaz: se muestran en el pie de página de la simulación y se aplican tal cual en el código (`STANDARD_RANGES` en `src/types.ts`).
 
 Una botella debe cumplir los criterios establecidos para continuar con el proceso.
 
 ## 9.1. Dimensiones
 
-Rango inicial:
+Rango estándar:
 
 ```text
 Altura:   15 – 35 cm
@@ -359,13 +357,11 @@ Diámetro:  5 – 10 cm
 
 Estos valores son generales y no corresponden a un modelo específico de botella.
 
-Los límites podrán modificarse mediante controles deslizantes.
-
 ---
 
 ## 9.2. Peso
 
-Rango inicial:
+Rango estándar:
 
 ```text
 180 – 250 g
@@ -373,22 +369,11 @@ Rango inicial:
 
 El rango representa una aproximación general para una botella de vidrio vacía.
 
-Los límites podrán modificarse mediante controles deslizantes.
-
 ---
 
-## 9.3. Transmisión de luz
+## 9.3. Color por RGB (sin transmisión de luz)
 
-La botella debe permitir cierto paso de luz.
-
-Regla inicial:
-
-```text
-Transmisión < 3%
-→ Rechazo
-```
-
-Una transmisión menor al 3% se considera demasiado opaca para el criterio simplificado de la simulación.
+El proceso de transmisión de luz fue eliminado. El color se establece exclusivamente mediante análisis RGB (ver §11) y no existe rechazo por opacidad.
 
 ---
 
@@ -422,7 +407,7 @@ Se utilizarán reglas sencillas basadas en RGB.
 
 ## Transparente
 
-La botella permite una transmisión alta y relativamente uniforme de luz.
+Los tres componentes RGB son similares entre sí.
 
 Conceptualmente:
 
@@ -430,13 +415,11 @@ Conceptualmente:
 R ≈ G ≈ B
 ```
 
-con alta transmisión general.
-
 ---
 
 ## Verde
 
-La transmisión presenta predominancia del componente verde.
+El componente verde predomina sobre el rojo y el azul.
 
 Conceptualmente:
 
@@ -449,7 +432,7 @@ G > B
 
 ## Ámbar
 
-La transmisión presenta predominancia de componentes rojos y verdes, con menor componente azul.
+Los componentes rojo y verde son elevados, con menor componente azul.
 
 Conceptualmente:
 
@@ -460,17 +443,7 @@ B reducido
 
 ---
 
-## Opaco
-
-Si:
-
-```text
-Transmisión < 3%
-```
-
-la botella se considera no válida y se envía a rechazo.
-
-> Los umbrales exactos de RGB serán configurables y forman parte de la simulación, no de una especificación industrial.
+> La clasificación de color es simplificada y forma parte de la simulación, no de una especificación industrial.
 
 ---
 
@@ -552,7 +525,7 @@ La máquina tendrá cinco contenedores.
 | Ámbar | Vidrio válido, color ámbar y marca identificada |
 | Transparente | Vidrio válido, color transparente y marca identificada |
 | No identificado | Vidrio válido pero marca no identificada |
-| Rechazo | Botella que no cumple los criterios físicos o de vidrio |
+| Rechazo | Botella que no cumple los criterios físicos |
 
 ### Nota sobre "No identificado"
 
@@ -617,7 +590,7 @@ botellas aceptadas como vidrio
 
 # 16. Registro CSV
 
-Cada botella procesada generará un registro.
+Cada botella procesada generará un registro que se **acumula automáticamente en la sesión**. El botón **Descargar CSV** exporta todos los registros acumulados (la descarga no borra el acumulado).
 
 Campos iniciales:
 
@@ -628,7 +601,6 @@ color
 altura
 diametro
 peso
-transmitancia
 decision
 motivo_rechazo
 contenedor
@@ -637,11 +609,11 @@ contenedor
 Ejemplo:
 
 ```csv
-timestamp,marca,color,altura,diametro,peso,transmitancia,decision,motivo_rechazo,contenedor
-2026-10-02T15:30:12,Heineken,Verde,23.4,6.2,221,48.3,Aceptada,,Verde
-2026-10-02T15:30:20,Tecate,Ambar,25.1,6.5,230,31.7,Aceptada,,Ambar
-2026-10-02T15:30:28,No identificada,Transparente,24.8,6.3,218,82.1,Aceptada,,No identificado
-2026-10-02T15:30:36,Heineken,Verde,40.2,6.1,230,45.2,Rechazada,Altura fuera de rango,Rechazo
+timestamp,marca,color,altura,diametro,peso,decision,motivo_rechazo,contenedor
+2026-10-02T15:30:12,Heineken,Verde,23.4,6.2,221,Aceptada,,Verde
+2026-10-02T15:30:20,Tecate,Ambar,25.1,6.5,230,Aceptada,,Ambar
+2026-10-02T15:30:28,No identificada,Transparente,24.8,6.3,218,Aceptada,,No identificado
+2026-10-02T15:30:36,Heineken,Verde,40.2,6.1,230,Rechazada,Altura fuera de rango,Rechazo
 ```
 
 No se registrará:
@@ -652,9 +624,11 @@ No se registrará:
 
 ---
 
-# 17. Animación
+# 17. Animación y modo automático
 
 La máquina deberá representarse como un sistema animado.
+
+La simulación funciona en **modo automático continuo**: al abrir el sitio la máquina espera en `IDLE` hasta pulsar **Iniciar simulación**; a partir de ahí procesa botellas aleatorias una tras otra hasta pulsar **Pausar**. Entre botella y botella hay una pausa configurable (por defecto 1 segundo, escalada por la velocidad).
 
 El recorrido conceptual será:
 
@@ -667,9 +641,7 @@ Peso
   ↓
 Dimensiones
   ↓
-Transmisión de luz
-  ↓
-Cámara
+Cámara RGB
   ↓
 OCR
   ↓
@@ -716,42 +688,31 @@ Velocidad 5x   → demostración rápida
 
 La velocidad solamente afecta la animación y el flujo temporal de la simulación.
 
+La pausa entre botella y botella también se escala por la velocidad (`pausa efectiva = pausa configurada / velocidad`), de modo que a 5x la demostración sigue siendo rápida.
+
 ---
 
-# 19. Parámetros editables
+# 19. Parámetros
 
-Los límites utilizados por la máquina serán configurables mediante controles deslizantes.
+## Rangos de aceptación (estándar fijo, no editables)
 
-## Parámetros físicos
-
-```text
-Altura mínima
-Altura máxima
-
-Diámetro mínimo
-Diámetro máximo
-
-Peso mínimo
-Peso máximo
-```
-
-## Parámetros ópticos
+Los límites físicos y ópticos son el estándar de la máquina y **no se pueden modificar** desde la interfaz. Se muestran en el pie de página:
 
 ```text
-Transmisión mínima
+Altura:    15 – 35 cm
+Diámetro:   5 – 10 cm
+Peso:     180 – 250 g
 ```
 
-## Parámetros de color
-
-Los umbrales RGB podrán modificarse para experimentar con la clasificación.
-
-## Parámetros de simulación
+## Controles de simulación (editables)
 
 ```text
-Velocidad
+Velocidad (0.5x, 1x, 2x, 5x)
+Pausa entre botellas (0 – 5 s)
+Capacidad de contenedores (para el aviso de "lleno")
 ```
 
-Esto permitirá demostrar cómo cambia la clasificación cuando se modifican los criterios.
+Esto permite controlar el ritmo de la demostración sin alterar los criterios de clasificación.
 
 ---
 
@@ -774,12 +735,7 @@ SI peso fuera de rango:
 SI altura fuera de rango:
     rechazar
 
-analizar transmisión de luz
-
-SI transmisión < mínimo:
-    rechazar
-
-determinar color
+determinar color por RGB
 
 realizar OCR
 
@@ -822,7 +778,6 @@ interface BottleResult {
   height: number;
   diameter: number;
   weight: number;
-  lightTransmission: number;
   decision: "accepted" | "rejected";
   rejectionReason?: string;
   container:
@@ -850,8 +805,6 @@ BOTTLE_DETECTED
 WEIGHING
 ↓
 MEASURING
-↓
-GLASS_ANALYSIS
 ↓
 COLOR_ANALYSIS
 ↓
@@ -1023,20 +976,20 @@ Esta decisión requeriría criterios industriales adicionales que no forman part
 
 La simulación se considerará funcional cuando sea capaz de:
 
-1. Recibir una botella simulada.
+1. Recibir una botella simulada (generada aleatoriamente en modo automático).
 2. Ejecutar el recorrido completo.
 3. Mostrar visualmente cada etapa.
 4. Obtener peso y dimensiones.
-5. Aplicar los límites configurables.
+5. Aplicar los límites del estándar fijo.
 6. Determinar si la botella es válida.
 7. Obtener su color.
 8. Intentar identificar la marca.
 9. Clasificar la botella en uno de los cinco contenedores.
 10. Actualizar los contadores.
-11. Registrar el resultado en CSV.
-12. Permitir modificar los parámetros en tiempo real.
+11. Registrar el resultado en CSV (acumulado en sesión + botón de descarga).
+12. Permitir modificar los controles de simulación en tiempo real (velocidad, pausa, capacidad).
 13. Permitir modificar la velocidad de simulación.
-14. Mostrar claramente el resultado de aceptación o rechazo.
+14. Mostrar claramente el resultado de aceptación o rechazo (solo al terminar; "Procesando…" durante el ciclo).
 
 ---
 
@@ -1047,3 +1000,56 @@ La propuesta puede resumirse como:
 > **Una estación automatizada de recuperación y clasificación de botellas de vidrio postconsumo que combina medición física, visión artificial, OCR y separación automatizada para generar información trazable sobre los envases recuperados.**
 
 El valor principal del sistema no está únicamente en separar botellas, sino en **convertir el proceso de recuperación postconsumo en una fuente estructurada de datos** que pueda posteriormente apoyar la logística inversa, la reutilización, el reciclaje y la toma de decisiones dentro de una estrategia de economía circular.
+
+---
+
+# 29. Ejecución del proyecto
+
+## Requisitos
+
+- Node.js 22+
+- npm
+
+## Comandos
+
+```bash
+npm install     # instalar dependencias
+npm run dev     # servidor de desarrollo (abrir la URL indicada)
+npm run build   # compilación de producción (tsc + vite build → dist/)
+npm test        # pruebas unitarias de las reglas de decisión (vitest)
+```
+
+## Uso de la simulación
+
+1. Abrir el sitio: la máquina inicia en `IDLE` (detenida).
+2. Pulsar **Iniciar simulación**: procesa botellas aleatorias en ciclo continuo.
+3. Pulsar **Pausar simulación** para detener el ciclo.
+4. Ajustar en vivo: velocidad (0.5x–5x), pausa entre botellas y capacidad de contenedores.
+5. Pulsar **Descargar CSV** para exportar los registros acumulados.
+
+## Estructura del proyecto
+
+```text
+main.py                  # módulo de visión de referencia (webcam + OpenCV + OCR, no integrado a la web)
+src/
+  types.ts               # tipos + STANDARD_RANGES + SimParams
+  App.tsx                # ciclo automático (iniciar/pausar) + layout
+  simulation/
+    brands.ts            # catálogo de marcas
+    rules.ts             # validación física, color RGB, decisión y contenedor
+    rules.test.ts        # pruebas unitarias
+    randomBottle.ts      # generador aleatorio de botellas
+    visionMock.ts        # mock del módulo de visión (sustituye a main.py en la web)
+    engine.ts            # máquina de estados temporizada (8 s base / velocidad)
+    csv.ts               # acumulado y descarga del CSV
+  components/
+    MachineView.tsx      # máquina en corte lateral + animación
+    ResultDisplay.tsx    # pantalla (resultado al terminar / "Procesando…" en curso)
+    ControlsPanel.tsx    # controles de simulación + descarga CSV
+    CountersPanel.tsx    # conteos por color, marca y totales
+    ContainersView.tsx   # cinco contenedores (V/A/T/N/R) con nivel
+    EventLog.tsx         # últimas botellas procesadas
+    StandardsFooter.tsx  # pie con los rangos estándar de aceptación
+```
+
+> `main.py` se conserva únicamente como referencia de cómo sería el sistema real de visión artificial y no forma parte de la simulación web.

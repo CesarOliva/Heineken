@@ -8,7 +8,7 @@ export default function StandardsFooter() {
                 <h2 className="font-semibold text-xs tracking-wide text-slate-300 mb-2">
                     RANGOS ACEPTABLES ESTÁNDAR
                 </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                     <div className="rounded bg-slate-800/70 border border-slate-700 px-3 py-2">
                         <div className="text-slate-500 text-[10px] uppercase">Altura</div>
                         <div className="text-slate-100 font-mono font-semibold">
@@ -25,12 +25,6 @@ export default function StandardsFooter() {
                         <div className="text-slate-500 text-[10px] uppercase">Peso</div>
                         <div className="text-slate-100 font-mono font-semibold">
                             {r.minWeight} – {r.maxWeight} g
-                        </div>
-                    </div>
-                    <div className="rounded bg-slate-800/70 border border-slate-700 px-3 py-2">
-                        <div className="text-slate-500 text-[10px] uppercase">Transmisión de luz</div>
-                        <div className="text-slate-100 font-mono font-semibold">
-                            ≥ {r.minTransmission} %
                         </div>
                     </div>
                 </div>

@@ -50,11 +50,9 @@ export function decideBottle(seed: BottleSeed, params: AcceptanceRanges): Bottle
     if (!physics.ok) {
         decision = 'rejected';
         reason = physics.reason;
-    } else if (seed.lightTransmission < params.minTransmission) {
-        decision = 'rejected';
-        reason = 'Transmisión insuficiente (opaco)';
     }
 
+    // El color se establece exclusivamente por RGB (classifyColorRGB).
     const [r, g, b] = seed.meanRGB;
     const color = classifyColorRGB(r, g, b);
     const brand = seed.brandCandidate ?? UNIDENTIFIED;
@@ -67,7 +65,6 @@ export function decideBottle(seed: BottleSeed, params: AcceptanceRanges): Bottle
         height: round1(seed.height),
         diameter: round1(seed.diameter),
         weight: Math.round(seed.weight),
-        lightTransmission: round1(seed.lightTransmission),
         meanRGB: seed.meanRGB,
         ocrText: seed.ocrText,
         decision,

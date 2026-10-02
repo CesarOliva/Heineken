@@ -14,12 +14,6 @@ const RGB_BASE = {
     transparente: [225, 225, 220] as [number, number, number],
 };
 
-const TRANSMISSION_BASE = {
-    verde: [30, 55],
-    ambar: [20, 45],
-    transparente: [70, 92],
-} as const;
-
 function noisy(rgb: [number, number, number]): [number, number, number] {
     const j = () => rand(-14, 14);
     const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
@@ -55,20 +49,13 @@ export function randomBottleSeed(): BottleSeed {
     let diameter = rand(5.5, 8.5);
     let weight = rand(190, 245);
 
-    const [tMin, tMax] = TRANSMISSION_BASE[trueColor];
-    let lightTransmission = rand(tMin, tMax);
-
     if (anomalous) {
-        const kind = Math.random();
-
-        if (kind < 0.4) {
+        // Anomalías físicas detectables por peso/dimensiones (botella rota o no válida)
+        if (Math.random() < 0.5) {
             weight = Math.random() < 0.5 ? rand(80, 175) : rand(255, 400); // rota
-        } else if (kind < 0.7) {
+        } else {
             height = Math.random() < 0.5 ? rand(8, 14.5) : rand(35.5, 45); // rota
             weight = rand(120, 300);
-        } else {
-            lightTransmission = rand(0, 2.9); // opaca
-            weight = rand(190, 260);
         }
     }
 
@@ -76,7 +63,6 @@ export function randomBottleSeed(): BottleSeed {
         height,
         diameter,
         weight,
-        lightTransmission,
         meanRGB: noisy(RGB_BASE[trueColor]),
         trueColor,
         ocrText,

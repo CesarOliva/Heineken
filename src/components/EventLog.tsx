@@ -13,7 +13,7 @@ export default function EventLog({ results }: { results: BottleResult[] }) {
 					<div key={`${r.timestamp}-${i}`} className="flex items-center gap-2 bg-slate-800/60 rounded px-2 py-1">
 						<span>{r.decision === 'accepted' ? '🟢' : '🔴'}</span>
 						<span className="truncate flex-1">
-							{r.brand} · {r.color} · {r.weight}g · {r.lightTransmission}% → <b>{r.container}</b>
+							{r.brand} · {r.color} · {r.weight}g → <b>{r.container}</b>
 						</span>
 						<span className="text-slate-500 font-mono">{r.timestamp.slice(11, 19)}</span>
 					</div>
